@@ -269,4 +269,4 @@ Proprietary — Medstocksy. Internal use only.
 
 ---
 
-Built by Vaibhav Singh · Lucknow, India · Full-Stack Web Developer
+Built Medstocksy Team · India · Full-Stack Web Developer
