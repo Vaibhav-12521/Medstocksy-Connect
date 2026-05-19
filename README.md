@@ -9,7 +9,7 @@ A WhatsApp-driven CRM that plugs into the existing **Medstocksy Inventory** app 
 ## ⚙️ Stack
 
 | Layer | Choice | Why |
-|-------|--------|-----|
+|-------|--------|-----| 
 | Frontend | **React 18 + TypeScript + Vite 6** | Fast HMR, code-split routes, strict types |
 | Styling | **Tailwind 3 + shadcn/ui** | Matches parent inventory app's design tokens exactly |
 | State | **TanStack Query 5** + React Context | Server cache + auth/pharmacy state |
