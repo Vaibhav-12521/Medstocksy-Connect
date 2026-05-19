@@ -63,6 +63,11 @@ export default function Customers() {
     queryKey: ['customers', pharmacyId, segment, search, sort],
     queryFn: () =>
       listCustomers({ pharmacyId, segment, search: search || undefined, sort, limit: 50 }),
+    enabled: !!pharmacyId,
+    // Customer lists rarely change in a 5-min window during normal counter
+    // work; mutations (create/edit) already invalidate the key, so this just
+    // suppresses needless background refetches.
+    staleTime: 5 * 60_000,
   });
 
   // Build a lookup so family rows can render "Family of {primaryName}".

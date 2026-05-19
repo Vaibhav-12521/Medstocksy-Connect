@@ -2,6 +2,7 @@ import { Outlet } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { Menu } from 'lucide-react';
 import { AppSidebar } from './AppSidebar';
+import { RemindersBell } from './RemindersBell';
 import { Button } from '@/components/ui/button';
 import { cn, storage } from '@/lib/utils';
 
@@ -66,6 +67,9 @@ export function Layout() {
           <Outlet />
         </div>
       </main>
+
+      {/* Reminders bell — fixed top-right; respects rate limit + opt-out */}
+      <RemindersBell />
     </div>
   );
 }

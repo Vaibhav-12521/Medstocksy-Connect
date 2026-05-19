@@ -38,6 +38,3 @@ yarn-error.log*
 # Supabase local
 supabase/.branches
 supabase/.temp
-
-# Agent config/cache
-.agents/

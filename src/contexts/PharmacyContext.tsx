@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import type { MemberRole } from '@/types/database';
@@ -83,10 +83,12 @@ export function PharmacyProvider({ children }: { children: ReactNode }) {
     }
   }, [activePharmacyId, memberships]);
 
-  const setActivePharmacy = (id: string) => {
+  // Stable callback identity prevents children that depend on this from
+  // re-rendering whenever PharmacyProvider re-renders.
+  const setActivePharmacy = useCallback((id: string) => {
     setActivePharmacyId(id);
     storage.set(STORAGE_KEY, id);
-  };
+  }, []);
 
   const activeRole = memberships.find((m) => m.pharmacyId === activePharmacyId)?.role ?? null;
   // Only set needsPharmacy when the query genuinely succeeded with empty data.
@@ -94,18 +96,22 @@ export function PharmacyProvider({ children }: { children: ReactNode }) {
   const needsPharmacy =
     !authLoading && !isLoading && !!user && isSuccess && memberships.length === 0;
 
+  // Memoise the context value — without this, every render of PharmacyProvider
+  // (and there are many, since auth + query state flip during loads) creates
+  // a brand-new object and forces every consumer to re-render even when none
+  // of the fields actually changed.
+  const value = useMemo(() => ({
+    loading: authLoading || isLoading,
+    error: isError ? (queryError as Error) : null,
+    memberships,
+    activePharmacyId,
+    activeRole,
+    setActivePharmacy,
+    needsPharmacy,
+  }), [authLoading, isLoading, isError, queryError, memberships, activePharmacyId, activeRole, setActivePharmacy, needsPharmacy]);
+
   return (
-    <PharmacyContext.Provider
-      value={{
-        loading: authLoading || isLoading,
-        error: isError ? (queryError as Error) : null,
-        memberships,
-        activePharmacyId,
-        activeRole,
-        setActivePharmacy,
-        needsPharmacy,
-      }}
-    >
+    <PharmacyContext.Provider value={value}>
       {children}
     </PharmacyContext.Provider>
   );

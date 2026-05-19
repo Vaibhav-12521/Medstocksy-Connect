@@ -5,7 +5,7 @@ import { X, Send, Calendar } from 'lucide-react';
 import { supabase, type Tables } from '@/lib/supabase';
 import { useActivePharmacy } from '@/contexts/PharmacyContext';
 import { useT } from '@/contexts/LanguageContext';
-import { sendMessage, getWhatsAppHealth } from '@/lib/api/messages';
+import { getWhatsAppHealth, openWhatsAppCompose, logManualSend } from '@/lib/api/messages';
 import { renderTemplate, cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -113,28 +113,32 @@ export function ComposeDrawer({ open, onClose, customer }: ComposeDrawerProps) {
   const sendMut = useMutation({
     mutationFn: async () => {
       if (!template) throw new Error('Pick a template first');
-      
-      const cleanPhone = customer.phone.replace(/\D/g, '');
-      const text = encodeURIComponent(fullMessage);
-      const url = `https://api.whatsapp.com/send/?phone=${cleanPhone}&text=${text}`;
-      window.open(url, '_blank');
+      if (!customer.whatsapp_opted_in) throw new Error('Customer is opted out of WhatsApp.');
 
-      const { error } = await supabase.from('crm_messages').insert({
-        pharmacy_id: pharmacyId,
-        customer_id: customer.id,
-        direction: 'outbound',
-        channel: 'whatsapp',
-        status: 'delivered',
-        content: fullMessage,
-        provider_id: `manual_${Date.now()}`
+      // 1. Open WhatsApp Web (desktop) or the WA app (mobile) in the reused
+      //    medcrm tab, with the message + image link pre-filled.
+      const opened = openWhatsAppCompose({
+        phone: customer.phone,
+        body: renderedBody,
+        imageUrl: template.image_url,
       });
-      
-      if (error) throw error;
+      if (!opened) throw new Error('Popup blocked. Allow popups for this site and try again.');
+
+      // 2. Audit-log the manual send + bump the rate-limit window.
+      await logManualSend({
+        pharmacyId,
+        customerId: customer.id,
+        phone: customer.phone,
+        body: fullMessage,
+        templateId: template.id,
+      });
       return true;
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['messages'] });
       qc.invalidateQueries({ queryKey: ['whatsapp-health'] });
+      qc.invalidateQueries({ queryKey: ['customer-activity', customer.id] });
+      qc.invalidateQueries({ queryKey: ['customer', customer.id] });
       onClose();
     },
   });

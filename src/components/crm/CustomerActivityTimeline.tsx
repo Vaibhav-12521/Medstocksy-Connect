@@ -61,8 +61,11 @@ export function CustomerActivityTimeline({ customerId }: { customerId: string })
   const { data: events = [], isLoading } = useQuery<TimelineEvent[]>({
     queryKey: ['customer-activity', customerId],
     enabled: !!customerId,
+    staleTime: 30_000,
     queryFn: async () => {
-      const [msgs, sales, notes, rxs, refills, meds] = await Promise.all([
+      // Run all customer-scoped fetches in parallel. Medicines lookup is
+      // deferred to a second step so we only fetch the rows we actually need.
+      const [msgs, sales, notes, rxs, refills] = await Promise.all([
         supabase
           .from('crm_messages')
           .select('id, body, status, direction, sent_at, created_at, template:crm_templates(name)')
@@ -83,15 +86,25 @@ export function CustomerActivityTimeline({ customerId }: { customerId: string })
           .eq('customer_id', customerId)
           .order('refilled_at', { ascending: false })
           .limit(40),
-        supabase
-          .from('crm_prescription_medicines')
-          .select('id, medicine_name'),
       ]);
 
-      // Build a lookup so refill rows can show the medicine name.
+      // Medicine-name lookup ONLY for the refills we actually have — avoids
+      // pulling the entire crm_prescription_medicines table just to map IDs.
+      const refillRows = (refills.data ?? []) as unknown as PrescriptionRefill[];
+      const medIds = Array.from(new Set(refillRows.map((r) => r.medicine_id)));
       const medMap = new Map<string, string>();
-      ((meds.data ?? []) as unknown as { id: string; medicine_name: string }[])
-        .forEach((m) => medMap.set(m.id, m.medicine_name));
+      if (medIds.length > 0) {
+        const { data: medRows, error: medErr } = await supabase
+          .from('crm_prescription_medicines')
+          .select('id, medicine_name')
+          .in('id', medIds);
+        if (medErr) {
+          console.warn('[timeline] medicine name lookup failed:', medErr.message);
+        } else {
+          ((medRows ?? []) as unknown as { id: string; medicine_name: string }[])
+            .forEach((m) => medMap.set(m.id, m.medicine_name));
+        }
+      }
 
       const out: TimelineEvent[] = [];
       ((msgs.data ?? []) as unknown as MsgEvent[]).forEach((m) =>
@@ -102,7 +115,7 @@ export function CustomerActivityTimeline({ customerId }: { customerId: string })
       );
       notes.forEach((n) => out.push({ type: 'note', at: n.created_at, data: n }));
       rxs.forEach((r) => out.push({ type: 'rx', at: r.created_at, data: r }));
-      ((refills.data ?? []) as unknown as PrescriptionRefill[]).forEach((r) =>
+      refillRows.forEach((r) =>
         out.push({
           type: 'refill',
           at: r.refilled_at,

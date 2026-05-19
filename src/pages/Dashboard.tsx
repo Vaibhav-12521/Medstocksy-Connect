@@ -238,11 +238,15 @@ export default function Dashboard() {
   const { data: health } = useQuery({
     queryKey: ['whatsapp-health', pharmacyId],
     queryFn: () => getWhatsAppHealth(pharmacyId),
+    enabled: !!pharmacyId,
     refetchInterval: 60_000,
+    staleTime: 30_000,
   });
 
   const { data: counts } = useQuery({
     queryKey: ['dashboard-counts', pharmacyId],
+    enabled: !!pharmacyId,
+    staleTime: 60_000,
     queryFn: async () => {
       const now = new Date();
       const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
@@ -310,6 +314,8 @@ export default function Dashboard() {
 
   const { data: upcoming, isLoading: loadingReminders } = useQuery<UpcomingRow[]>({
     queryKey: ['upcoming-reminders', pharmacyId],
+    enabled: !!pharmacyId,
+    staleTime: 60_000,
     queryFn: async () => {
       const { data, error } = await supabase
         .from('crm_scheduled_reminders')

@@ -1,4 +1,4 @@
-# Medstocksy_Connect — Customer Relations for Pharmacies
+# medcrm — Customer Relations for Pharmacies
 
 > **Note on scope:** this is a production-quality scaffold, **not a finished product**. The schema, auth, RLS, layout, and core pages are real. The campaign wizard, reminder rule editor, and a few other interactions are marked TODO and need ~1–2 more weeks of focused work to fully ship. Read the [What's done vs what's left](#whats-done-vs-whats-left) section before deploying.
 
@@ -9,13 +9,13 @@ A WhatsApp-driven CRM that plugs into the existing **Medstocksy Inventory** app 
 ## ⚙️ Stack
 
 | Layer | Choice | Why |
-|-------|--------|-----|
+|-------|--------|-----| 
 | Frontend | **React 18 + TypeScript + Vite 6** | Fast HMR, code-split routes, strict types |
 | Styling | **Tailwind 3 + shadcn/ui** | Matches parent inventory app's design tokens exactly |
 | State | **TanStack Query 5** + React Context | Server cache + auth/pharmacy state |
 | Routing | **react-router-dom v6** | File-organised routes |
 | Forms | react-hook-form + zod | Type-safe validation |
-| Animations | **Framer Motion 11** | Drawer transitions, page fade-in, list stagger |
+| Animations | **Framer Motion 11** | Drawer transitions, page fade-in, list stagger | 
 | Backend | **Supabase** (Postgres + Auth + RLS) | Same project as inventory app — SSO via shared `auth.users` |
 | Serverless | **Vercel Functions** (`api/`) | WhatsApp send + webhook handlers |
 | WhatsApp | **Meta Cloud API v21** | Direct integration (Twilio fallback supported) |
@@ -30,7 +30,7 @@ This app **must** share the inventory app's Supabase project so users only sign 
 
 ```bash
 cp .env.example .env
-# Edit .env with your Supabase URL + anon key (same as Medstocksy-inventory)
+# Edit .env with your Supabase URL + anon key (same as Medstocksy-inventory) 
 ```
 
 ### 2. Apply the database migration
@@ -269,4 +269,4 @@ Proprietary — Medstocksy. Internal use only.
 
 ---
 
-Built Medstocksy Team · India · Full-Stack Web Developer
+Built by Vaibhav Singh · Lucknow, India · Full-Stack Web Developer
