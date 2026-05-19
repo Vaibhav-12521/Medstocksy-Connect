@@ -15,7 +15,7 @@ A WhatsApp-driven CRM that plugs into the existing **Medstocksy Inventory** app 
 | State | **TanStack Query 5** + React Context | Server cache + auth/pharmacy state |
 | Routing | **react-router-dom v6** | File-organised routes |
 | Forms | react-hook-form + zod | Type-safe validation |
-| Animations | **Framer Motion 11** | Drawer transitions, page fade-in, list stagger |
+| Animations | **Framer Motion 11** | Drawer transitions, page fade-in, list stagger | 
 | Backend | **Supabase** (Postgres + Auth + RLS) | Same project as inventory app — SSO via shared `auth.users` |
 | Serverless | **Vercel Functions** (`api/`) | WhatsApp send + webhook handlers |
 | WhatsApp | **Meta Cloud API v21** | Direct integration (Twilio fallback supported) |
