@@ -216,12 +216,13 @@ function RemindersBellInner() {
                   type="button"
                   onClick={() => {
                     const eligible = reminders.filter((r) => r.customer?.whatsapp_opted_in !== false);
-                    if (eligible.length === 0) return;
+                    const first = eligible[0];
+                    if (!first) return;
                     // First send fires immediately on the user's gesture (popup
                     // blockers allow it). After this, the same WhatsApp tab gets
                     // navigated on each subsequent click — no fresh popup needed.
                     setQueue(eligible);
-                    send.mutate(eligible[0]);
+                    send.mutate(first);
                   }}
                   disabled={send.isPending}
                   className="w-full rounded-md bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground hover:opacity-90 disabled:opacity-60"
@@ -239,11 +240,12 @@ function RemindersBellInner() {
                 queue={queue}
                 onNext={() => {
                   const remaining = queue.slice(1);
-                  if (remaining.length === 0) {
+                  const next = remaining[0];
+                  if (!next) {
                     setQueue(null);
                   } else {
                     setQueue(remaining);
-                    send.mutate(remaining[0]);
+                    send.mutate(next);
                   }
                 }}
                 onStop={() => setQueue(null)}

@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { Menu } from 'lucide-react';
 import { AppSidebar } from './AppSidebar';
 import { RemindersBell } from './RemindersBell';
+import { TodayRemindersPopup } from './TodayRemindersPopup';
 import { Button } from '@/components/ui/button';
 import { cn, storage } from '@/lib/utils';
 
@@ -70,6 +71,9 @@ export function Layout() {
 
       {/* Reminders bell — fixed top-right; respects rate limit + opt-out */}
       <RemindersBell />
+
+      {/* Top-5 reminders popup — auto-opens once per day when there's work to do */}
+      <TodayRemindersPopup />
     </div>
   );
 }
