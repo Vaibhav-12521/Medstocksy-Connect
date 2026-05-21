@@ -94,6 +94,16 @@ export interface ComposeArgs {
  * Open WhatsApp with a pre-filled message for one customer. Returns true if
  * the tab opened (or was reused); false only if the browser blocked the popup.
  *
+ * Priority order:
+ *   1. WhatsApp Desktop / mobile app  (via `whatsapp://send?...`)
+ *   2. WhatsApp Web fallback          (via `web.whatsapp.com/send?...`)
+ *
+ * Detection: we navigate the tab to `whatsapp://` first. If the OS launches
+ * the desktop app, the browser tab loses focus (blur event fires within ~1s).
+ * If no blur happens within the timeout, the app isn't installed → we
+ * navigate the same tab to WhatsApp Web. This pattern is what Slack, Zoom,
+ * Discord, etc. use for their "open native app" flows.
+ *
  * No new tab is created after the first call within the session: subsequent
  * calls with the same target name navigate the existing tab. So a queue of
  * sends ends up as ONE tab that auto-updates per recipient.
@@ -105,17 +115,45 @@ export function openWhatsAppCompose(args: ComposeArgs): boolean {
   const fullText = args.imageUrl ? `${args.body}\n\n${args.imageUrl}` : args.body;
   const text = encodeURIComponent(fullText);
 
+  const appUrl = `whatsapp://send?phone=${digits}&text=${text}`;
+  const webUrl = `https://web.whatsapp.com/send?phone=${digits}&text=${text}`;
+
   const isMobile = typeof navigator !== 'undefined'
     && /(android|iphone|ipad|mobile)/i.test(navigator.userAgent);
 
-  // Mobile → deep link straight into the WA app. Desktop → web.whatsapp.com
-  // directly (skips the wa.me redirect, and our tab name reuse works here).
-  const url = isMobile
-    ? `whatsapp://send?phone=${digits}&text=${text}`
-    : `https://web.whatsapp.com/send?phone=${digits}&text=${text}`;
+  // Mobile: `whatsapp://` is always the right answer — the app is the only
+  // reasonable target. No fallback needed (if WA isn't installed on a phone,
+  // there's no point in WA Web on that same phone).
+  if (isMobile) {
+    const win = window.open(appUrl, WA_TAB_NAME, 'noopener');
+    return Boolean(win);
+  }
 
-  const win = window.open(url, WA_TAB_NAME, 'noopener');
-  return Boolean(win);
+  // Desktop: try the native app first, fall back to Web on timeout.
+  const win = window.open(appUrl, WA_TAB_NAME, 'noopener');
+  if (!win) return false;  // popup blocked
+
+  // If the OS hands focus to WhatsApp Desktop, our window blurs.
+  // If after the timeout we never blurred, assume the app isn't installed.
+  let appLaunched = false;
+  const onBlur = () => { appLaunched = true; };
+  window.addEventListener('blur', onBlur, { once: true });
+
+  setTimeout(() => {
+    window.removeEventListener('blur', onBlur);
+    if (appLaunched) return;
+    // App didn't grab focus — fall back to WhatsApp Web in the SAME tab so we
+    // don't spawn two windows. `try` guards against cross-origin nav errors
+    // some browsers raise after a failed custom-protocol attempt.
+    try {
+      if (!win.closed) win.location.href = webUrl;
+    } catch {
+      // Tab is already navigated / dead; open a new fallback tab.
+      window.open(webUrl, WA_TAB_NAME, 'noopener');
+    }
+  }, 1200);
+
+  return true;
 }
 
 export interface LogManualSendArgs {
