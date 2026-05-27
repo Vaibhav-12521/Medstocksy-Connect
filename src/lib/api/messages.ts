@@ -156,12 +156,82 @@ export function openWhatsAppCompose(args: ComposeArgs): boolean {
   return true;
 }
 
+// ─── openWA bot bridge ─────────────────────────────────────────────────────
+
+/** Whether the optional `wa-bot` Node service is configured in env. */
+export function isBotConfigured(): boolean {
+  return Boolean(import.meta.env.VITE_WA_BOT_URL && import.meta.env.VITE_WA_BOT_SECRET);
+}
+
+interface BotStatus {
+  ready: boolean;
+  hasSession: boolean;
+  qrAvailable: boolean;
+}
+
+/** Probe the bot to see if it's online and has a logged-in WA session. */
+export async function getBotStatus(): Promise<BotStatus | null> {
+  const url = import.meta.env.VITE_WA_BOT_URL;
+  if (!url) return null;
+  try {
+    const res = await fetch(`${url}/status`, { signal: AbortSignal.timeout(2_500) });
+    if (!res.ok) return null;
+    return (await res.json()) as BotStatus;
+  } catch {
+    return null;
+  }
+}
+
+/** Send via the wa-bot service. Returns the WA message ID on success. */
+export async function sendViaBot(args: ComposeArgs): Promise<{ messageId: string }> {
+  const url = import.meta.env.VITE_WA_BOT_URL;
+  const secret = import.meta.env.VITE_WA_BOT_SECRET;
+  if (!url || !secret) throw new Error('Bot not configured (VITE_WA_BOT_URL / VITE_WA_BOT_SECRET missing).');
+
+  const res = await fetch(`${url}/send`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${secret}` },
+    body: JSON.stringify({
+      phone: args.phone,
+      message: args.body,
+      imageUrl: args.imageUrl ?? null,
+    }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({})) as { error?: string };
+    throw new Error(err.error ?? `Bot send failed: HTTP ${res.status}`);
+  }
+  return (await res.json()) as { messageId: string };
+}
+
+/**
+ * Smart router: if the bot is configured AND online (ready=true), send
+ * through the bot. Otherwise fall back to the manual click-to-chat flow.
+ * Returns `{ via: 'bot' | 'manual' }` so callers can decide whether the
+ * staff still needs to hit Send in WhatsApp.
+ */
+export async function sendOrCompose(
+  args: ComposeArgs
+): Promise<{ via: 'bot' | 'manual'; messageId?: string }> {
+  if (isBotConfigured()) {
+    const status = await getBotStatus();
+    if (status?.ready) {
+      const { messageId } = await sendViaBot(args);
+      return { via: 'bot', messageId };
+    }
+  }
+  const opened = openWhatsAppCompose(args);
+  if (!opened) throw new Error('Popup blocked. Allow popups for this site and try again.');
+  return { via: 'manual' };
+}
+
 export interface LogManualSendArgs {
   pharmacyId: string;
   customerId: string;
   phone: string;          // E.164 — stored as `to_phone`
   body: string;
   templateId?: string | null;
+  campaignId?: string | null;
 }
 
 /**
@@ -178,6 +248,7 @@ export async function logManualSend(args: LogManualSendArgs): Promise<{ messageI
       pharmacy_id: args.pharmacyId,
       customer_id: args.customerId,
       template_id: args.templateId ?? null,
+      campaign_id: args.campaignId ?? null,
       direction: 'outbound',
       status: 'sent',
       body: args.body,

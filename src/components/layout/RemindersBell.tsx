@@ -15,7 +15,7 @@ import { useT } from '@/contexts/LanguageContext';
 import {
   listDueReminders, markReminderSent, cancelReminder, type DueReminder,
 } from '@/lib/api/reminders';
-import { canSendNow, openWhatsAppCompose, logManualSend } from '@/lib/api/messages';
+import { canSendNow, sendOrCompose, logManualSend } from '@/lib/api/messages';
 import { cn, initials, renderTemplate } from '@/lib/utils';
 
 export function RemindersBell() {
@@ -81,11 +81,11 @@ function RemindersBellInner() {
       Object.entries(r.variables || {}).forEach(([k, v]) => { variables[k] = String(v); });
       const body = renderTemplate(r.template.body, variables);
 
-      // 2. Open WhatsApp in the persistent tab (reused across the batch).
-      const opened = openWhatsAppCompose({ phone: r.customer.phone, body });
-      if (!opened) throw new Error('Popup blocked. Allow popups for this site and try again.');
+      // 2. Route through the bot if configured + online, else click-to-chat.
+      const result = await sendOrCompose({ phone: r.customer.phone, body });
 
-      // 3. Audit-log the manual send + bump the rate counter.
+      // 3. Audit-log the send + bump the rate counter (skip if bot already
+      //    audited via its /audit endpoint — TODO: wire that fully).
       const { messageId } = await logManualSend({
         pharmacyId,
         customerId: r.customer.id,
@@ -94,8 +94,9 @@ function RemindersBellInner() {
         templateId: r.template.id,
       });
 
-      // 4. Mark the reminder as sent (optimistic — assumes staff hit Send in WA).
-      await markReminderSent(r.id, messageId);
+      // 4. Mark the reminder as sent. For bot sends this is fully accurate;
+      //    for manual sends it's optimistic (assumes staff hit Send in WA).
+      await markReminderSent(r.id, result.messageId ?? messageId);
     },
     onSuccess: async () => {
       await qc.invalidateQueries({ queryKey: ['due-reminders', pharmacyId] });

@@ -16,7 +16,7 @@ import { useT } from '@/contexts/LanguageContext';
 import {
   listDueReminders, markReminderSent, cancelReminder, type DueReminder,
 } from '@/lib/api/reminders';
-import { canSendNow, openWhatsAppCompose, logManualSend } from '@/lib/api/messages';
+import { canSendNow, sendOrCompose, logManualSend } from '@/lib/api/messages';
 import { cn, initials, renderTemplate } from '@/lib/utils';
 
 const TOP_N = 5;
@@ -79,8 +79,7 @@ function TodayRemindersPopupInner() {
       Object.entries(r.variables || {}).forEach(([k, v]) => { variables[k] = String(v); });
       const body = renderTemplate(r.template.body, variables);
 
-      const opened = openWhatsAppCompose({ phone: r.customer.phone, body });
-      if (!opened) throw new Error('Popup blocked. Allow popups for this site and try again.');
+      const result = await sendOrCompose({ phone: r.customer.phone, body });
 
       const { messageId } = await logManualSend({
         pharmacyId,
@@ -90,7 +89,7 @@ function TodayRemindersPopupInner() {
         templateId: r.template.id,
       });
 
-      await markReminderSent(r.id, messageId);
+      await markReminderSent(r.id, result.messageId ?? messageId);
     },
     onSuccess: async () => {
       await qc.invalidateQueries({ queryKey: ['due-reminders', pharmacyId] });

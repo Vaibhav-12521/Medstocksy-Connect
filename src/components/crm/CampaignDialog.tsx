@@ -11,7 +11,6 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import type { TranslationKey } from '@/i18n/translations';
 import { SEGMENT_OPTIONS } from '@/lib/crm/segments';
 import { deduplicateTemplates } from '@/lib/crm/templates';
 
@@ -220,7 +219,7 @@ export function CampaignDialog({ open, onOpenChange, campaign }: CampaignDialogP
     <Dialog open={open} onOpenChange={(v) => { if (!save.isPending) onOpenChange(v); }}>
       <DialogContent className="max-w-2xl">
         <DialogHeader>
-          <DialogTitle>{t('campaigns.new')}</DialogTitle>
+          <DialogTitle>{isEdit ? t('campaigns.edit') : t('campaigns.new')}</DialogTitle>
           <DialogDescription>{t('campaigns.new_desc')}</DialogDescription>
         </DialogHeader>
 

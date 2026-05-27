@@ -6,7 +6,7 @@ interface AuthContextValue {
   user: User | null;
   session: Session | null;
   loading: boolean;
-  signInWithGoogle: () => Promise<void>;
+  signInWithGoogle: () => Promise<{ error: string | null }>;
   signInWithEmail: (email: string, password: string) => Promise<{ error: string | null }>;
   signUpWithEmail: (
     email: string,
@@ -53,10 +53,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     session,
     loading,
     signInWithGoogle: async () => {
-      await supabase.auth.signInWithOAuth({
+      const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: { redirectTo: window.location.origin + '/auth/callback' },
       });
+      // "provider is not enabled" → Google OAuth isn't configured in the
+      // Supabase dashboard yet. Surface a friendly message instead of leaking
+      // the raw 400 JSON.
+      if (error) {
+        const msg = /not enabled|Unsupported provider/i.test(error.message)
+          ? 'Google sign-in isn\'t set up yet. Use email & password below.'
+          : error.message;
+        return { error: msg };
+      }
+      return { error: null };
     },
     signInWithEmail: async (email, password) => {
       const { error } = await supabase.auth.signInWithPassword({ email, password });

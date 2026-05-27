@@ -9,14 +9,19 @@ export interface SegmentMetadata {
   dark?: boolean;
 }
 
+/** Guaranteed-present "all customers" segment. Exported so lookups always
+ *  have a non-undefined fallback (Record<string,…> access is optional under
+ *  strict mode). */
+export const ALL_SEGMENT: SegmentMetadata = {
+  key: 'all',
+  labelKey: 'campaigns.seg.all',
+  descKey: 'campaigns.seg.all', // fallback
+  helpKey: 'campaigns.seg.all', // fallback
+  color: 'bg-muted text-muted-foreground',
+};
+
 export const SEGMENTS: Record<string, SegmentMetadata> = {
-  all: {
-    key: 'all',
-    labelKey: 'campaigns.seg.all',
-    descKey: 'campaigns.seg.all', // fallback
-    helpKey: 'campaigns.seg.all', // fallback
-    color: 'bg-muted text-muted-foreground',
-  },
+  all: ALL_SEGMENT,
   new: {
     key: 'new',
     labelKey: 'segments.new.label',
@@ -63,3 +68,8 @@ export const SEGMENTS: Record<string, SegmentMetadata> = {
 };
 
 export const SEGMENT_OPTIONS = Object.values(SEGMENTS).filter(s => s.key !== 'optout');
+
+/** Always returns a valid segment — falls back to "all" for unknown keys. */
+export function getSegment(key: string | null | undefined): SegmentMetadata {
+  return (key ? SEGMENTS[key] : undefined) ?? ALL_SEGMENT;
+}

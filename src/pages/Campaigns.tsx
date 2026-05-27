@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Plus } from 'lucide-react';
+import { Plus, Send } from 'lucide-react';
 import { useActivePharmacy } from '@/contexts/PharmacyContext';
 import { useT } from '@/contexts/LanguageContext';
 import { supabase, type Tables } from '@/lib/supabase';
@@ -10,7 +10,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import type { CampaignStatus } from '@/types/database';
 import { cn, relativeTime } from '@/lib/utils';
 import { CampaignDialog } from '@/components/crm/CampaignDialog';
-import { SEGMENTS } from '@/lib/crm/segments';
+import { CampaignSendDialog } from '@/components/crm/CampaignSendDialog';
+import { getSegment } from '@/lib/crm/segments';
 
 type Campaign = Tables<'crm_campaigns'>;
 
@@ -30,6 +31,7 @@ export default function Campaigns() {
   const { pharmacyId } = useActivePharmacy();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<Campaign | null>(null);
+  const [sending, setSending] = useState<Campaign | null>(null);
 
   const openNew = () => { setEditing(null); setDialogOpen(true); };
   const openEdit = (c: Campaign) => { setEditing(c); setDialogOpen(true); };
@@ -97,8 +99,8 @@ export default function Campaigns() {
                     </div>
                     <h3 className="mt-2 text-lg font-bold">{c.name}</h3>
                     <p className="mt-1 text-sm text-muted-foreground">
-                      {t('campaigns.segment')} <span className={cn('rounded px-1.5 py-0.5 text-[10px] font-bold uppercase', SEGMENTS[c.segment_key]?.color ?? SEGMENTS.all.color)}>
-                        {t(SEGMENTS[c.segment_key]?.labelKey ?? SEGMENTS.all.labelKey)}
+                      {t('campaigns.segment')} <span className={cn('rounded px-1.5 py-0.5 text-[10px] font-bold uppercase', getSegment(c.segment_key).color)}>
+                        {t(getSegment(c.segment_key).labelKey)}
                       </span> ·
                       {' '}{t('campaigns.template')} <span className="font-semibold text-foreground">{c.template?.name ?? '—'}</span>
                       {' · '}<span className="font-mono">{c.total_recipients}</span> recipients
@@ -110,9 +112,15 @@ export default function Campaigns() {
                     </p>
                   </button>
                   {editable && (
-                    <Button variant="outline" size="sm" onClick={() => openEdit(c)}>
-                      {t('btn.edit')}
-                    </Button>
+                    <div className="flex shrink-0 gap-2">
+                      <Button variant="outline" size="sm" onClick={() => openEdit(c)}>
+                        {t('btn.edit')}
+                      </Button>
+                      <Button size="sm" onClick={() => setSending(c)}>
+                        <Send className="h-3.5 w-3.5" />
+                        {t('campaigns.send_now')}
+                      </Button>
+                    </div>
                   )}
                 </div>
               </Card>
@@ -125,6 +133,12 @@ export default function Campaigns() {
         open={dialogOpen}
         onOpenChange={setDialogOpen}
         campaign={editing}
+      />
+
+      <CampaignSendDialog
+        open={!!sending}
+        onOpenChange={(v) => { if (!v) setSending(null); }}
+        campaign={sending}
       />
     </div>
   );

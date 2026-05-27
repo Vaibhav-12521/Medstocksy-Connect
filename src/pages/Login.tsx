@@ -21,8 +21,13 @@ export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
+  /** Non-error notice (e.g. "no account found, switched to sign-up"). */
+  const [notice, setNotice] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
   const [confirmSentTo, setConfirmSentTo] = useState<string | null>(null);
+
+  // Google button only shows once you've enabled the provider in Supabase.
+  const googleEnabled = import.meta.env.VITE_ENABLE_GOOGLE_AUTH === 'true';
 
   useEffect(() => {
     if (user) {
@@ -34,17 +39,37 @@ export default function Login() {
   const switchMode = (next: Mode) => {
     setMode(next);
     setError(null);
+    setNotice(null);
     setConfirmSentTo(null);
+  };
+
+  const onGoogle = async () => {
+    setError(null);
+    setNotice(null);
+    const { error: err } = await signInWithGoogle();
+    if (err) setError(err);
+    // On success the browser redirects to Google; no further handling needed.
   };
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    setNotice(null);
     setPending(true);
 
     if (mode === 'signin') {
       const { error: err } = await signInWithEmail(email, password);
-      if (err) setError(err);
+      if (err) {
+        // Supabase returns a generic "Invalid login credentials" for both a
+        // wrong password AND a non-existent account (anti-enumeration). Treat
+        // it as "maybe no account" → bounce to sign-up, keep what they typed.
+        if (/invalid login credentials/i.test(err)) {
+          setMode('signup');
+          setNotice(t('login.no_account_switch'));
+        } else {
+          setError(err);
+        }
+      }
       setPending(false);
       return;
     }
@@ -161,23 +186,34 @@ export default function Login() {
                 </p>
               </div>
 
-              <Button
-                variant="outline"
-                size="lg"
-                className="w-full gap-3"
-                onClick={() => signInWithGoogle()}
-                disabled={pending}
-                type="button"
-              >
-                <GoogleIcon />
-                {t('login.continue_google')}
-              </Button>
+              {googleEnabled && (
+                <>
+                  <Button
+                    variant="outline"
+                    size="lg"
+                    className="w-full gap-3"
+                    onClick={onGoogle}
+                    disabled={pending}
+                    type="button"
+                  >
+                    <GoogleIcon />
+                    {t('login.continue_google')}
+                  </Button>
 
-              <div className="flex items-center gap-3">
-                <div className="h-px flex-1 bg-border" />
-                <span className="text-xs text-muted-foreground">{t('login.or_email')}</span>
-                <div className="h-px flex-1 bg-border" />
-              </div>
+                  <div className="flex items-center gap-3">
+                    <div className="h-px flex-1 bg-border" />
+                    <span className="text-xs text-muted-foreground">{t('login.or_email')}</span>
+                    <div className="h-px flex-1 bg-border" />
+                  </div>
+                </>
+              )}
+
+              {/* Info notice (e.g. auto-switched to sign-up) */}
+              {notice && (
+                <div className="rounded-md border border-primary/30 bg-primary/5 px-3 py-2 text-xs text-primary">
+                  {notice}
+                </div>
+              )}
 
               <form onSubmit={onSubmit} className="space-y-3">
                 {mode === 'signup' && (
