@@ -308,6 +308,7 @@ export default function Dashboard() {
     id: string;
     scheduled_for: string;
     status: string;
+    variables?: Record<string, any> | null;
     customer: { id: string; name: string; phone: string };
     template: { name: string };
   }

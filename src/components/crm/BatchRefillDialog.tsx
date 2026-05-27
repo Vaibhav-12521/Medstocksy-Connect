@@ -1,14 +1,13 @@
 import { useEffect, useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { Loader2, Pill, IndianRupee, RefreshCcw, CheckCircle2 } from 'lucide-react';
+import { Loader2, IndianRupee, RefreshCcw, CheckCircle2 } from 'lucide-react';
 import { useActivePharmacy } from '@/contexts/PharmacyContext';
 import { useT } from '@/contexts/LanguageContext';
-import { recordRefill, type PrescriptionWithMeds, type MedicineWithRefills } from '@/lib/api/prescriptions';
+import { recordRefill, type PrescriptionWithMeds } from '@/lib/api/prescriptions';
 import { cn } from '@/lib/utils';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
 } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 
 interface BatchRefillDialogProps {

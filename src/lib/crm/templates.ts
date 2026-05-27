@@ -61,7 +61,7 @@ export function deduplicateTemplates<T extends { pharmacy_id: string | null; nam
     const existingIdx = acc.findIndex(item => `${item.pharmacy_id ?? 'global'}:${item.name}:${item.language}` === key);
     if (existingIdx === -1) {
       acc.push(t);
-    } else if (new Date(t.created_at) > new Date(acc[existingIdx].created_at)) {
+    } else if (new Date(t.created_at) > new Date(acc[existingIdx]!.created_at)) {
       acc[existingIdx] = t;
     }
     return acc;

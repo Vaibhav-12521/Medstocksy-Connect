@@ -11,7 +11,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import {
-  Loader2, Receipt, FileText, Users, ExternalLink, Plus, X as XIcon,
+  Loader2, Receipt, FileText, Users, ExternalLink, X as XIcon,
   Calendar as CalendarIcon, IndianRupee, Pill, Stethoscope,
   Paperclip, Upload, File as FileIcon, Image as ImageIcon, Pencil, ClipboardPaste,
 } from 'lucide-react';
@@ -737,91 +737,4 @@ function SourceButton({
   );
 }
 
-/** Compact medicine row for the bill dialog — fewer fields than the full
- *  PrescriptionDialog to keep this flow fast. Name + dosage + frequency + qty
- *  + duration + refill. Other fields fall back to the schema defaults. */
-function CompactMedRow({
-  index, value, onChange, onRemove,
-}: {
-  index: number;
-  value: MedicineInput;
-  onChange: (patch: Partial<MedicineInput>) => void;
-  onRemove?: () => void;
-}) {
-  const t = useT();
-  return (
-    <div className="rounded-md border bg-card/40 p-2">
-      <div className="mb-1 flex items-center justify-between">
-        <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-          {t('rx.medicine_n').replace('{n}', String(index + 1))}
-        </span>
-        {onRemove && (
-          <button
-            type="button"
-            onClick={onRemove}
-            className="rounded p-0.5 text-destructive hover:bg-destructive/10"
-            aria-label="Remove"
-          >
-            <XIcon className="h-3 w-3" />
-          </button>
-        )}
-      </div>
-      <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-[2fr_1fr]">
-        <Input
-          value={value.medicine_name}
-          onChange={(e) => onChange({ medicine_name: e.target.value })}
-          placeholder={t('rx.med_name')}
-          maxLength={120}
-          required
-        />
-        <Input
-          value={value.dosage ?? ''}
-          onChange={(e) => onChange({ dosage: e.target.value })}
-          placeholder={t('rx.dosage_placeholder')}
-          maxLength={60}
-        />
-      </div>
-      <div className="mt-1.5 grid grid-cols-3 gap-1.5">
-        <input
-          type="number"
-          inputMode="numeric"
-          min={1}
-          max={999}
-          value={value.quantity ?? ''}
-          onChange={(e) => {
-            const n = parseInt(e.target.value, 10);
-            onChange({ quantity: Number.isFinite(n) && n > 0 ? n : null });
-          }}
-          placeholder={t('rx.quantity')}
-          className="h-9 rounded-md border border-input bg-background px-2 font-mono text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-        />
-        <input
-          type="number"
-          inputMode="numeric"
-          min={1}
-          max={365}
-          value={value.duration_days ?? ''}
-          onChange={(e) => {
-            const n = parseInt(e.target.value, 10);
-            onChange({ duration_days: Number.isFinite(n) && n > 0 ? n : null });
-          }}
-          placeholder={t('rx.duration')}
-          className="h-9 rounded-md border border-input bg-background px-2 font-mono text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-        />
-        <input
-          type="number"
-          inputMode="numeric"
-          min={1}
-          max={365}
-          value={value.refill_interval_days ?? ''}
-          onChange={(e) => {
-            const n = parseInt(e.target.value, 10);
-            onChange({ refill_interval_days: Number.isFinite(n) && n > 0 ? n : null });
-          }}
-          placeholder={t('rx.refill')}
-          className="h-9 rounded-md border border-input bg-background px-2 font-mono text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-        />
-      </div>
-    </div>
-  );
-}
+

@@ -10,10 +10,9 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   ArrowLeft, Camera, Check, ChevronRight, Clock, FileText,
   Image as ImageIcon, Loader2, Pencil, Pill, Receipt, Search,
-  Stethoscope, Upload, User, Users, X as XIcon, Bell, ClipboardPaste,
+  Stethoscope, Upload, User, Users, X as XIcon, Bell, ClipboardPaste, Plus,
 } from 'lucide-react';
 import { useActivePharmacy } from '@/contexts/PharmacyContext';
-import { useT } from '@/contexts/LanguageContext';
 import { supabase } from '@/lib/supabase';
 import { createCustomer, DuplicatePhoneError, type Customer } from '@/lib/api/customers';
 import { createPrescription, type MedicineInput } from '@/lib/api/prescriptions';
@@ -192,7 +191,6 @@ const MAX_BYTES = 10 * 1024 * 1024;
 function PrescriptionStep({
   customer, pharmacyId, onSaved,
 }: { customer: Customer; pharmacyId: string; onSaved: (prescriptionId: string, firstMed: string) => void }) {
-  const t = useT();
   const qc = useQueryClient();
   const today = new Date().toISOString().slice(0, 10);
   const [mode, setMode] = useState<Mode>('upload');

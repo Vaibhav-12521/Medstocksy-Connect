@@ -16,7 +16,6 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import type { TranslationKey } from '@/i18n/translations';
 
 interface PrescriptionDialogProps {
   open: boolean;
@@ -29,52 +28,6 @@ interface PrescriptionDialogProps {
   /** When provided, opens in edit mode pre-filled. */
   existing?: PrescriptionWithMeds | null;
 }
-
-// Stored values are English (data); display labels are translated.
-const FREQ_OPTIONS: { value: string; key: TranslationKey }[] = [
-  { value: 'Once daily',         key: 'rx.freq.once' },
-  { value: 'Twice daily',        key: 'rx.freq.twice' },
-  { value: 'Three times daily',  key: 'rx.freq.thrice' },
-  { value: 'As needed',          key: 'rx.freq.as_needed' },
-  { value: 'Weekly',             key: 'rx.freq.weekly' },
-  { value: 'Monthly',            key: 'rx.freq.monthly' },
-];
-
-const INSTRUCTION_OPTIONS: { value: string; key: TranslationKey }[] = [
-  { value: '',                    key: 'rx.inst.none' },
-  { value: 'Before meals',        key: 'rx.inst.before_meals' },
-  { value: 'After meals',         key: 'rx.inst.after_meals' },
-  { value: 'With food',           key: 'rx.inst.with_food' },
-  { value: 'On empty stomach',    key: 'rx.inst.empty_stomach' },
-  { value: 'At bedtime',          key: 'rx.inst.bedtime' },
-  { value: 'As directed',         key: 'rx.inst.as_directed' },
-];
-
-const FORM_OPTIONS: { value: string; key: TranslationKey }[] = [
-  { value: '',           key: 'rx.form.none' },
-  { value: 'Tablet',     key: 'rx.form.tablet' },
-  { value: 'Capsule',    key: 'rx.form.capsule' },
-  { value: 'Syrup',      key: 'rx.form.syrup' },
-  { value: 'Drops',      key: 'rx.form.drops' },
-  { value: 'Ointment',   key: 'rx.form.ointment' },
-  { value: 'Cream',      key: 'rx.form.cream' },
-  { value: 'Inhaler',    key: 'rx.form.inhaler' },
-  { value: 'Injection',  key: 'rx.form.injection' },
-  { value: 'Powder',     key: 'rx.form.powder' },
-  { value: 'Other',      key: 'rx.form.other' },
-];
-
-const ROUTE_OPTIONS: { value: string; key: TranslationKey }[] = [
-  { value: '',             key: 'rx.route.none' },
-  { value: 'Oral',         key: 'rx.route.oral' },
-  { value: 'Topical',      key: 'rx.route.topical' },
-  { value: 'Inhalation',   key: 'rx.route.inhalation' },
-  { value: 'Injection',    key: 'rx.route.injection' },
-  { value: 'Eye',          key: 'rx.route.eye' },
-  { value: 'Ear',          key: 'rx.route.ear' },
-  { value: 'Nasal',        key: 'rx.route.nasal' },
-  { value: 'Sublingual',   key: 'rx.route.sublingual' },
-];
 
 const EMPTY_MED: MedicineInput = {
   medicine_name: '',

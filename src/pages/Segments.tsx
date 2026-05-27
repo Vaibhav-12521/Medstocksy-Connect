@@ -68,7 +68,7 @@ export default function Segments() {
                   {t(s.descKey)}
                 </p>
                 <div className="mt-6 text-5xl font-bold tracking-tight">
-                  {isLoading ? <Skeleton className="h-12 w-20" /> : (counts?.[s.key] ?? 0)}
+                  {isLoading ? <Skeleton className="h-12 w-20" /> : (counts?.[s.key as SegmentKey] ?? 0)}
                 </div>
                 <div className={
                   s.dark ? 'mt-1 text-xs text-muted-foreground' : 'mt-1 text-xs text-muted-foreground'

@@ -6,7 +6,6 @@ import {
   MessageSquare, PhoneCall, Smartphone, RefreshCcw, ChevronRight, Send
 } from 'lucide-react';
 import { useActivePharmacy } from '@/contexts/PharmacyContext';
-import { useT } from '@/contexts/LanguageContext';
 import { supabase, type Tables } from '@/lib/supabase';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -122,9 +121,6 @@ function ReminderRow({ row, onRetry, onSend }: { row: ScheduledReminder; onRetry
 
 function ScheduledList({ pharmacyId, statusFilter }: { pharmacyId: string; statusFilter: ReminderStatus[] }) {
   const qc = useQueryClient();
-  const now = new Date();
-  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
-  const endOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1).toISOString();
 
   const { data: rows = [], isLoading } = useQuery<ScheduledReminder[]>({
     queryKey: ['scheduled-reminders', pharmacyId, statusFilter.join(',')],
@@ -197,7 +193,6 @@ function TodayList({ pharmacyId }: { pharmacyId: string }) {
   const now = new Date();
   const start = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
   const end = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1).toISOString();
-  const navigate = useNavigate();
 
   const { data: rows = [], isLoading } = useQuery<ScheduledReminder[]>({
     queryKey: ['reminders-today', pharmacyId],
@@ -266,7 +261,6 @@ function TodayList({ pharmacyId }: { pharmacyId: string }) {
 }
 
 function RulesTab({ pharmacyId, role }: { pharmacyId: string; role: string }) {
-  const t = useT();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<Rule | null>(null);
   const isAdmin = role === 'admin' || role === 'manager';

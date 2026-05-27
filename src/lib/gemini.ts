@@ -71,15 +71,14 @@ export async function extractBillData(
     const reader = new FileReader();
     reader.onloadend = () => {
       const result = reader.result as string;
-      resolve(result.split(',')[1]);
+      const parts = result.split(',');
+      resolve(parts[1] ?? '');
     };
     reader.onerror = reject;
     reader.readAsDataURL(fileBlob);
   });
 
   const ai = new GoogleGenAI({ apiKey });
-
-  let lastError: Error = new Error('All Gemini models failed.');
 
   for (const model of FREE_TIER_MODELS) {
     try {
@@ -115,14 +114,12 @@ export async function extractBillData(
       // 429 quota / rate-limit → try next model
       if (msg.includes('429') || msg.includes('RESOURCE_EXHAUSTED') || msg.includes('quota')) {
         console.warn(`[Gemini] Model ${model} quota exceeded, trying next...`);
-        lastError = new Error(`Model ${model} quota exceeded.`);
         continue;
       }
 
       // 404 model not found → try next
       if (msg.includes('404') || msg.includes('not found')) {
         console.warn(`[Gemini] Model ${model} not available, trying next...`);
-        lastError = new Error(`Model ${model} not available.`);
         continue;
       }
 

@@ -78,7 +78,7 @@ export function ComposeDrawer({ open, onClose, customer }: ComposeDrawerProps) {
       const { data: meds, error: medErr } = await supabase
         .from('crm_prescription_medicines')
         .select('medicine_name')
-        .eq('prescription_id', rxData.id)
+        .eq('prescription_id', (rxData as { id: string }).id)
         .order('position');
       if (medErr) return null;
       return (meds ?? []).map((m: { medicine_name: string }) => m.medicine_name);

@@ -178,7 +178,7 @@ export default function Activity() {
             <section key={g.key}>
               <div className="mb-2 flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
                 <span className="h-px flex-1 bg-border" />
-                <span>{t(g.labelKey) || g.key}</span>
+                <span>{g.labelKey ? t(g.labelKey) : g.key}</span>
                 <span className="font-mono text-foreground/60">{g.rows.length}</span>
                 <span className="h-px flex-1 bg-border" />
               </div>

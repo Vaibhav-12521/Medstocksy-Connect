@@ -111,13 +111,20 @@ export function QuickReminderDialog({
       base.setMonth(base.getMonth() + monthsValue);
     } else {
       // custom date + time
-      const [y, m, d] = customDate.split('-').map(Number);
-      const [h, min] = sendTime.split(':').map(Number);
+      const parts = customDate.split('-').map(Number);
+      const y = parts[0] ?? base.getFullYear();
+      const m = parts[1] ?? (base.getMonth() + 1);
+      const d = parts[2] ?? base.getDate();
+      const timeParts = sendTime.split(':').map(Number);
+      const h = timeParts[0] ?? 9;
+      const min = timeParts[1] ?? 0;
       base.setFullYear(y, m - 1, d);
       base.setHours(h, min, 0, 0);
       return base.toISOString();
     }
-    const [h, min] = sendTime.split(':').map(Number);
+    const timeParts = sendTime.split(':').map(Number);
+    const h = timeParts[0] ?? 9;
+    const min = timeParts[1] ?? 0;
     base.setHours(h, min, 0, 0);
     return base.toISOString();
   }

@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import {
-  Send, Edit2, ChevronLeft, Stethoscope, NotebookPen, Pill, FileText,
+  Send, Edit2, ChevronLeft, Stethoscope, NotebookPen, FileText,
   Copy, Trash2, Loader2, RefreshCcw,
 } from 'lucide-react';
 import { useActivePharmacy } from '@/contexts/PharmacyContext';
