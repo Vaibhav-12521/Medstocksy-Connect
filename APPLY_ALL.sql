@@ -23,8 +23,6 @@
 --  11. Grants for the `authenticated` role
 --  12. NOTIFY pgrst to refresh the API schema cache
 --
--- Run in: https://supabase.com/dashboard/project/<your-ref>/sql/new
--- ============================================================================
 
 BEGIN;
 
