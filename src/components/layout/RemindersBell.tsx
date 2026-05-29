@@ -117,7 +117,7 @@ function RemindersBellInner() {
   const hasOverdue = reminders.some((r) => new Date(r.scheduled_for) < new Date());
 
   return (
-    <div className="fixed right-4 top-4 z-30 md:right-6 md:top-6">
+    <div className="fixed right-3 top-2 z-30 md:right-6 md:top-6">
       <button
         type="button"
         aria-label={t('bell.aria_label')}

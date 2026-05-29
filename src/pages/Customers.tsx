@@ -113,18 +113,20 @@ export default function Customers() {
               : '—'}
           </p>
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={exportCsv} disabled={!data?.rows.length}>
+        {/* On phones: 3 buttons share the row, each grows to fill. On
+            tablet+: natural sizes. */}
+        <div className="grid w-full grid-cols-3 gap-2 sm:flex sm:w-auto">
+          <Button variant="outline" onClick={exportCsv} disabled={!data?.rows.length} className="min-w-0">
             <Download className="h-4 w-4" />
-            {t('btn.export')}
+            <span className="truncate">{t('btn.export')}</span>
           </Button>
-          <Button variant="outline" onClick={() => setBillOpen(true)}>
+          <Button variant="outline" onClick={() => setBillOpen(true)} className="min-w-0">
             <Receipt className="h-4 w-4" />
-            {t('add_bill.button')}
+            <span className="truncate">{t('add_bill.button')}</span>
           </Button>
-          <Button onClick={() => setNewOpen(true)}>
+          <Button onClick={() => setNewOpen(true)} className="min-w-0">
             <Plus className="h-4 w-4" />
-            {t('btn.add_customer')}
+            <span className="truncate">{t('btn.add_customer')}</span>
           </Button>
         </div>
       </header>
@@ -176,8 +178,71 @@ export default function Customers() {
         </div>
       </div>
 
-      {/* Table */}
-      <Card>
+      {/* MOBILE: card stack (phones only) */}
+      <div className="space-y-2 md:hidden">
+        {isLoading ? (
+          Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-20" />)
+        ) : data?.rows.length === 0 ? (
+          <Card className="p-10 text-center text-sm text-muted-foreground">
+            {t('customers.empty')}
+          </Card>
+        ) : (
+          data?.rows.map((c, i) => (
+            <motion.div
+              key={c.id}
+              initial={{ opacity: 0, y: 4 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: i * 0.015 }}
+            >
+              <Link to={`/customers/${c.id}`} className="block">
+                <Card className="flex items-start gap-3 p-3 transition-colors hover:border-primary/40 hover:bg-muted/30">
+                  <div className={cn(
+                    'flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-bold',
+                    c.family_of_id
+                      ? 'bg-amber-500/15 text-amber-700 dark:text-amber-300'
+                      : 'bg-primary/10 text-primary'
+                  )}>
+                    {initials(c.name)}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <span className="truncate font-semibold">{c.name}</span>
+                      {c.family_of_id && (
+                        <span className="inline-flex items-center gap-1 rounded-md bg-amber-500/10 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-amber-700 dark:text-amber-300">
+                          <Users className="h-2.5 w-2.5" />
+                          {t('cust.family_badge').replace(
+                            '{name}',
+                            primaryNameById.get(c.family_of_id) ?? t('cust.family_unknown')
+                          )}
+                        </span>
+                      )}
+                    </div>
+                    <div className="font-mono text-[11px] text-muted-foreground">{c.phone}</div>
+                    <div className="mt-1 flex flex-wrap gap-x-2 gap-y-0.5 text-[11px] text-muted-foreground">
+                      <span>{c.stats?.last_visit_at ? relativeTime(c.stats.last_visit_at) : '—'}</span>
+                      <span>·</span>
+                      <span className="font-mono font-medium text-foreground/80">
+                        {c.stats ? formatINR(c.stats.lifetime_value) : '—'}
+                      </span>
+                      <span>·</span>
+                      <span className="font-mono">{c.stats?.visit_count ?? 0} {t('profile.visits')}</span>
+                    </div>
+                    {(c.auto_tags.length > 0 || !c.whatsapp_opted_in) && (
+                      <div className="mt-1.5 flex flex-wrap gap-1">
+                        {c.auto_tags.map((t: TagKey) => <Tag key={t} tag={t} />)}
+                        {!c.whatsapp_opted_in && <Tag tag="optout" />}
+                      </div>
+                    )}
+                  </div>
+                </Card>
+              </Link>
+            </motion.div>
+          ))
+        )}
+      </div>
+
+      {/* DESKTOP: full table (tablet+) */}
+      <Card className="hidden md:block">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="border-b bg-muted/30 text-left text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">

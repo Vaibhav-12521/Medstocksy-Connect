@@ -224,22 +224,23 @@ export default function CustomerProfile() {
             </div>
           </div>
         </div>
-        <div className="flex flex-wrap gap-2">
-          <Button variant="outline" onClick={() => setEditOpen(true)}>
+        {/* Action buttons: 2-col grid on phones (each fills half-width), inline on sm+. */}
+        <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto sm:flex-wrap">
+          <Button variant="outline" onClick={() => setEditOpen(true)} className="min-w-0">
             <Edit2 className="h-4 w-4" />
-            {t('btn.edit')}
+            <span className="truncate">{t('btn.edit')}</span>
           </Button>
-          <Button variant="outline" onClick={() => setNoteOpen(true)}>
+          <Button variant="outline" onClick={() => setNoteOpen(true)} className="min-w-0">
             <NotebookPen className="h-4 w-4" />
-            {t('visit.add_button')}
+            <span className="truncate">{t('visit.add_button')}</span>
           </Button>
-          <Button variant="outline" onClick={() => { setEditingRx(null); setRxOpen(true); }}>
+          <Button variant="outline" onClick={() => { setEditingRx(null); setRxOpen(true); }} className="min-w-0">
             <FileText className="h-4 w-4" />
-            {t('rx.add_button')}
+            <span className="truncate">{t('rx.add_button')}</span>
           </Button>
-          <Button onClick={() => setComposeOpen(true)} disabled={!customer.whatsapp_opted_in}>
+          <Button onClick={() => setComposeOpen(true)} disabled={!customer.whatsapp_opted_in} className="min-w-0">
             <Send className="h-4 w-4" />
-            {t('btn.send_message')}
+            <span className="truncate">{t('btn.send_message')}</span>
           </Button>
         </div>
       </motion.header>
