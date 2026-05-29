@@ -318,6 +318,14 @@ export const translations = {
     'dash.health.bounce': 'Bounce rate · 24h',
     'dash.health.opt_outs': 'Opt-outs · 30d',
     'dash.health.window': 'Window',
+    'dash.pulse.title': 'Today\'s pulse',
+    'dash.pulse.live': 'Live · auto-refreshes',
+    'dash.pulse.revenue_today': 'Revenue today',
+    'dash.pulse.vs_yesterday': 'vs yesterday',
+    'dash.pulse.refills': 'Refills',
+    'dash.pulse.new_cust': 'New',
+    'dash.pulse.msgs': 'Sent',
+    'dash.pulse.due': 'Due',
 
     // ── Customers ──
     'customers.title': 'Customers',
@@ -1024,6 +1032,14 @@ export const translations = {
     'dash.health.bounce': 'बाउंस दर · 24 घंटे',
     'dash.health.opt_outs': 'ऑप्ट-आउट · 30 दिन',
     'dash.health.window': 'विंडो',
+    'dash.pulse.title': 'आज की धड़कन',
+    'dash.pulse.live': 'लाइव · ऑटो-रिफ़्रेश',
+    'dash.pulse.revenue_today': 'आज की आय',
+    'dash.pulse.vs_yesterday': 'कल की तुलना में',
+    'dash.pulse.refills': 'रीफिल',
+    'dash.pulse.new_cust': 'नए',
+    'dash.pulse.msgs': 'भेजे',
+    'dash.pulse.due': 'लंबित',
 
     // ── Customers ──
     'customers.title': 'ग्राहक',

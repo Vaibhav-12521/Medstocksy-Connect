@@ -2,15 +2,13 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
-import { BellRing, Megaphone, Send, TrendingUp, Users, Activity as ActivityIcon, HeartPulse, ClipboardList, AlertTriangle, FileText, Zap, MessageSquare, Smartphone, PhoneCall } from 'lucide-react';
+import { BellRing, Megaphone, Send, Users, Activity as ActivityIcon, HeartPulse, ClipboardList, AlertTriangle, FileText, Zap, MessageSquare, Smartphone, PhoneCall, IndianRupee, ArrowUpRight, ArrowDownRight, UserPlus, RefreshCcw, Clock } from 'lucide-react';
 import { useActivePharmacy } from '@/contexts/PharmacyContext';
 import { useT } from '@/contexts/LanguageContext';
 import { supabase } from '@/lib/supabase';
-import { getWhatsAppHealth } from '@/lib/api/messages';
 import { Card } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
-import { RateMeter } from '@/components/crm/RateMeter';
 import { ComposeDrawer } from '@/components/crm/ComposeDrawer';
 import { CustomerPickerDialog } from '@/components/crm/CustomerPickerDialog';
 import { cn } from '@/lib/utils';
@@ -92,6 +90,160 @@ const TILE_COLORS = {
   purpleDot: '#7F77DD',
   coralDot: '#D85A30',
 } as const;
+
+/* ─── Today's Pulse widget — replaces the WhatsApp health card ───────────── */
+function TodaysPulse({ pharmacyId }: { pharmacyId: string }) {
+  const t = useT();
+
+  const { data, isLoading } = useQuery({
+    queryKey: ['todays-pulse', pharmacyId],
+    enabled: !!pharmacyId,
+    refetchInterval: 60_000,
+    staleTime: 30_000,
+    queryFn: async () => {
+      const now = new Date();
+      const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
+      const tomorrowStart = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1).toISOString();
+      const yesterdayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1).toISOString();
+
+      const [salesToday, refillsToday, salesYesterday, refillsYesterday, newCustomers, msgsOut, remindersDue] =
+        await Promise.all([
+          supabase.from('crm_customer_sales').select('bill_amount')
+            .eq('pharmacy_id', pharmacyId)
+            .gte('sold_at', todayStart).lt('sold_at', tomorrowStart),
+          supabase.from('crm_prescription_refills').select('bill_amount')
+            .eq('pharmacy_id', pharmacyId)
+            .gte('refilled_at', todayStart).lt('refilled_at', tomorrowStart),
+          supabase.from('crm_customer_sales').select('bill_amount')
+            .eq('pharmacy_id', pharmacyId)
+            .gte('sold_at', yesterdayStart).lt('sold_at', todayStart),
+          supabase.from('crm_prescription_refills').select('bill_amount')
+            .eq('pharmacy_id', pharmacyId)
+            .gte('refilled_at', yesterdayStart).lt('refilled_at', todayStart),
+          supabase.from('crm_customers').select('id', { count: 'exact', head: true })
+            .eq('pharmacy_id', pharmacyId)
+            .gte('created_at', todayStart).lt('created_at', tomorrowStart),
+          supabase.from('crm_messages').select('id', { count: 'exact', head: true })
+            .eq('pharmacy_id', pharmacyId).eq('direction', 'outbound')
+            .gte('created_at', todayStart).lt('created_at', tomorrowStart),
+          supabase.from('crm_scheduled_reminders').select('id', { count: 'exact', head: true })
+            .eq('pharmacy_id', pharmacyId).eq('status', 'pending')
+            .gte('scheduled_for', todayStart).lt('scheduled_for', tomorrowStart),
+        ]);
+
+      const sum = (rows: { bill_amount?: number | null }[] | null | undefined) =>
+        (rows ?? []).reduce((acc, r) => acc + Number(r.bill_amount ?? 0), 0);
+      const revenueToday = sum(salesToday.data as never) + sum(refillsToday.data as never);
+      const revenueYesterday = sum(salesYesterday.data as never) + sum(refillsYesterday.data as never);
+      const refillsCount = (refillsToday.data ?? []).length;
+
+      return {
+        revenueToday,
+        revenueYesterday,
+        refillsToday: refillsCount,
+        newCustomersToday: newCustomers.count ?? 0,
+        messagesSentToday: msgsOut.count ?? 0,
+        remindersDueToday: remindersDue.count ?? 0,
+      };
+    },
+  });
+
+  const delta = data && data.revenueYesterday > 0
+    ? Math.round(((data.revenueToday - data.revenueYesterday) / data.revenueYesterday) * 100)
+    : null;
+  const trendUp = delta != null && delta >= 0;
+
+  return (
+    <Card className="p-5">
+      <div className="mb-4 flex items-center justify-between">
+        <h2 className="flex items-center gap-2 text-base font-semibold">
+          <Zap className="h-4 w-4 text-primary" />
+          {t('dash.pulse.title')}
+        </h2>
+        <span className="text-[11px] text-muted-foreground">{t('dash.pulse.live')}</span>
+      </div>
+
+      {isLoading || !data ? (
+        <div className="space-y-3">
+          <Skeleton className="h-12 w-2/3" />
+          <Skeleton className="h-4 w-1/2" />
+          <div className="grid grid-cols-2 gap-2 pt-2 sm:grid-cols-4">
+            {[1, 2, 3, 4].map((i) => <Skeleton key={i} className="h-16" />)}
+          </div>
+        </div>
+      ) : (
+        <div className="space-y-5">
+          {/* Revenue today + delta vs yesterday */}
+          <div>
+            <div className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+              <IndianRupee className="h-3 w-3" />
+              {t('dash.pulse.revenue_today')}
+            </div>
+            <div className="mt-1 flex items-baseline gap-2 font-mono">
+              <span className="text-3xl font-bold tabular-nums">
+                {formatINRCompact(data.revenueToday)}
+              </span>
+              {delta != null && (
+                <span className={cn(
+                  'inline-flex items-center gap-0.5 rounded-md px-1.5 py-0.5 text-[11px] font-bold',
+                  trendUp
+                    ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300'
+                    : 'bg-destructive/10 text-destructive'
+                )}>
+                  {trendUp ? <ArrowUpRight className="h-3 w-3" /> : <ArrowDownRight className="h-3 w-3" />}
+                  {Math.abs(delta)}%
+                </span>
+              )}
+            </div>
+            <div className="mt-0.5 text-[11px] text-muted-foreground">
+              {t('dash.pulse.vs_yesterday')} {formatINRCompact(data.revenueYesterday)}
+            </div>
+          </div>
+
+          {/* 4-stat grid */}
+          <div className="grid grid-cols-2 gap-2 border-t pt-4 sm:grid-cols-4">
+            <PulseStat icon={<RefreshCcw className="h-3.5 w-3.5" />} value={data.refillsToday}      label={t('dash.pulse.refills')} tone="emerald" />
+            <PulseStat icon={<UserPlus className="h-3.5 w-3.5" />}   value={data.newCustomersToday} label={t('dash.pulse.new_cust')} tone="primary" />
+            <PulseStat icon={<Send className="h-3.5 w-3.5" />}       value={data.messagesSentToday} label={t('dash.pulse.msgs')}    tone="sky" />
+            <PulseStat icon={<Clock className="h-3.5 w-3.5" />}      value={data.remindersDueToday} label={t('dash.pulse.due')}     tone="amber" />
+          </div>
+        </div>
+      )}
+    </Card>
+  );
+}
+
+function PulseStat({
+  icon, value, label, tone,
+}: {
+  icon: React.ReactNode; value: number; label: string;
+  tone: 'primary' | 'emerald' | 'sky' | 'amber';
+}) {
+  const colorMap: Record<typeof tone, string> = {
+    primary: 'bg-primary/10 text-primary',
+    emerald: 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300',
+    sky:     'bg-sky-500/10 text-sky-700 dark:text-sky-300',
+    amber:   'bg-amber-500/10 text-amber-700 dark:text-amber-300',
+  };
+  return (
+    <div className="flex items-center gap-2 rounded-lg border bg-card/40 p-2">
+      <span className={cn('flex h-7 w-7 shrink-0 items-center justify-center rounded-md', colorMap[tone])}>
+        {icon}
+      </span>
+      <div className="min-w-0">
+        <div className="text-lg font-bold leading-none tabular-nums">{value}</div>
+        <div className="truncate text-[10px] uppercase tracking-wider text-muted-foreground">{label}</div>
+      </div>
+    </div>
+  );
+}
+
+/** Compact ₹ formatter — switches to "₹1.2k" / "₹1.5L" past thresholds. */
+function formatINRCompact(amount: number): string {
+  if (amount >= 100_000) return `₹${(amount / 100_000).toFixed(1)}L`;
+  if (amount >= 1_000)   return `₹${(amount / 1_000).toFixed(1)}k`;
+  return `₹${Math.round(amount).toLocaleString('en-IN')}`;
+}
 
 /* ─── Recent Prescriptions widget ─────────────────────────────────────────── */
 function RecentPrescriptions({
@@ -234,14 +386,6 @@ export default function Dashboard() {
   const navigate = useNavigate();
   const [pickerOpen, setPickerOpen] = useState(false);
   const [composeFor, setComposeFor] = useState<CustomerWithStats | null>(null);
-
-  const { data: health } = useQuery({
-    queryKey: ['whatsapp-health', pharmacyId],
-    queryFn: () => getWhatsAppHealth(pharmacyId),
-    enabled: !!pharmacyId,
-    refetchInterval: 60_000,
-    staleTime: 30_000,
-  });
 
   const { data: counts } = useQuery({
     queryKey: ['dashboard-counts', pharmacyId],
@@ -467,50 +611,7 @@ export default function Dashboard() {
           </div>
         </Card>
 
-        <Card className="p-5">
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-base font-semibold">{t('dash.health.title')}</h2>
-            <span className="text-[11px] text-muted-foreground">{t('dash.health.live')}</span>
-          </div>
-          {health ? (
-            <div className="space-y-5">
-              <RateMeter
-                current={health.sends_last_hour}
-                cap={health.rate_limit_per_hour}
-                windowStart={health.send_window_start}
-                windowEnd={health.send_window_end}
-              />
-              <div className="space-y-2 border-t pt-4">
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">{t('dash.health.bounce')}</span>
-                  <span className={
-                    (health.bounce_rate_24h ?? 0) > 5 ? 'font-semibold text-destructive' : 'font-semibold text-emerald-700'
-                  }>
-                    {health.bounce_rate_24h != null ? `${health.bounce_rate_24h.toFixed(1)}%` : '—'}
-                  </span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">{t('dash.health.opt_outs')}</span>
-                  <span className="font-semibold text-emerald-700">
-                    {health.total_customers > 0
-                      ? `${((health.opt_outs_30d / health.total_customers) * 100).toFixed(1)}%`
-                      : '—'}
-                  </span>
-                </div>
-              </div>
-              <div className="flex items-center gap-2 border-t pt-4 text-xs text-muted-foreground">
-                <TrendingUp className="h-3.5 w-3.5" />
-                {t('dash.health.window')} {health.send_window_start.slice(0, 5)} – {health.send_window_end.slice(0, 5)} IST
-              </div>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              <Skeleton className="h-4 w-1/2" />
-              <Skeleton className="h-2 w-full" />
-              <Skeleton className="h-4 w-2/3" />
-            </div>
-          )}
-        </Card>
+        <TodaysPulse pharmacyId={pharmacyId} />
       </div>
 
       {/* Bottom row: recent prescriptions + failed reminders */}
